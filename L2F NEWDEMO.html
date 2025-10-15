@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L2F</title>
+
+<link id="dynamic-favicon" rel="icon">
+<script>
+  function setFaviconFromChar(char) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '48px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, 32, 32);
+    document.getElementById('dynamic-favicon').href = canvas.toDataURL('image/png');
+  }
+  setFaviconFromChar('📦');
+</script>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+    --border:#e2e8f0; --accent:#2563eb; --ok:#16a34a; --warn:#d97706; --danger:#dc2626;
+    --chip:#f1f5f9; --tab:#e6eefc;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1300px; margin:0 auto; padding:16px}
+  header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px}
+  .tabs{display:flex; gap:8px; background:var(--tab); border:1px solid var(--border); border-radius:12px; padding:6px; position:sticky; top:0; z-index:10}
+  .tab{padding:10px 12px; border-radius:10px; cursor:pointer; color:var(--muted)}
+  .tab.active{background:#fff; color:var(--text); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  section[hidden]{display:none}
+  .row{display:flex; gap:12px; flex-wrap:wrap}
+  .col{flex:1 1 360px; min-width:340px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; box-shadow:0 6px 20px rgba(0,0,0,.04)}
+  h2{font-size:16px; margin:0 0 8px; color:var(--muted)}
+  label{font-size:12px; color:var(--muted); display:block; margin:6px 0 4px}
+  input,select,button{border-radius:10px; border:1px solid var(--border); background:#fff; color:#0f172a; padding:10px; font-size:15px; outline:none}
+  input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  button{cursor:pointer} button:hover{filter:brightness(.98)}
+  .accent{background:#eef2ff; border-color:#c7d2fe; color:#1e40af}
+  .primary{background:var(--accent); color:#fff; border-color:#1d4ed8}
+  .danger{background:#fee2e2; border-color:#fecaca; color:#991b1b}
+  .ok{background:#dcfce7; border-color:#bbf7d0; color:#166534}
+  .ghost{background:#f8fafc; border-color:#e2e8f0; color:#0f172a}
+  .list{max-height:560px; overflow:auto; border:1px dashed var(--border); border-radius:10px; padding:8px; background:#fff}
+  .kv{display:flex; justify-content:space-between; gap:12px; padding:10px; border-bottom:1px dashed var(--border)}
+  .kv:last-child{border-bottom:0}
+  .pill{display:inline-block; padding:8px 12px; border-radius:999px; background:var(--chip); border:1px solid var(--border); font-size:13px; margin:4px}
+  .pill.small{padding:2px 8px; font-size:12px;}
+  .small{font-size:12px; color:var(--muted)}
+  .num{font-variant-numeric: tabular-nums}
+  .scanbox{display:flex; gap:8px}
+  .scanbox input{flex:1}
+  .divider{height:1px; background:var(--border); margin:10px -12px}
+  .card{background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px}
+  .sticky{position:sticky; top:8px}
+  .found{outline:2px solid #22c55e; background:#dcfce7; color:#166534}
+  .hint{padding:8px 10px; background:#ecfeff; border:1px solid #bae6fd; border-radius:10px; margin:8px 0; color:#0369a1}
+  /* Highlighted location display (for warehouse search) */
+  .hint.big-loc{
+    font-size: 4vw;
+    font-weight: 700;
+    text-align: center;
+    background: #dbeafe;
+    color: #1e3a8a;
+    border-color: #93c5fd;
+    padding: 20px;
+    margin-top: 16px;
+    border-radius: 16px;
+  }
+  #toast{position:fixed; left:50%; transform:translateX(-50%); bottom:16px; background:#111827; color:#fff; border:1px solid #1f2937; padding:10px 14px; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.4); display:none}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right}
+  th{background:#f1f5f9;color:var(--muted)}
+  .collapse-header{display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; padding:10px 12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border)}
+  .chev{transition:transform .2s ease}
+  .collapsed .chev{transform:rotate(180deg)}
+  .collapse-content{margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <font size="10">L2F</font>
+    <span class="small">© 2025 [יאיר קרשיגייב]. כל הזכויות שמורות.</span>
+  </header>
+
+  <nav class="tabs">
+    <div class="tab active" data-tab="t1">1) לא נסרק = חסר</div>
+    <div class="tab" data-tab="t2">2) נסרק = חסר</div>
+    <div class="tab" data-tab="t3">3) מיקומים במחסן</div>
+  </nav>
+
+  <!-- TAB 1 -->
+  <section id="t1">
+    <div class="row">
+      <div class="col" style="flex:2 1 640px">
+        <h2>חוסרים (מתמלא לפי סריקות לאימות)</h2>
+
+        <div class="card" id="whWork1">
+          <div class="kv" style="border:0; padding:0 0 6px 0">
+            <div><b>דגם:</b> <span id="wh1Sku">—</span> · <b>צבע:</b> <span id="wh1Color">—</span></div>
+            <div class="small"><span id="wh1Index">0</span>/<span id="wh1Total">0</span></div>
+          </div>
+          <div id="wh1Hint" class="hint" style="display:none"></div>
+          <div id="wh1Sizes" class="actions" style="flex-wrap:wrap"></div>
+          <div class="actions">
+            <button id="wh1Approve" class="ok">אישור</button>
+            <button id="wh1Skip" class="ghost">דילוג</button>
+          </div>
+          <div class="small">סמן את המידות שנמצאו (יהפכו ירוק). מה שלא נבחר יעבור לרשימת "חוסר במחסן".</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="missingAll1" class="list"></div>
+        <div class="actions">
+          <button id="exportMissingAll1" class="accent">יצוא חוסרים (CSV)</button>
+          <button id="clearMissing1" class="danger">נקה רשימת חוסרים</button>
+          <button id="resetAll1" class="danger">איפוס כל הרשימות</button>
+        </div>
+      </div>
+
+      <div class="col sticky">
+        <h2>סרוק ברקוד</h2>
+        <div class="scanbox">
+          <input id="scanInput1" placeholder="סרוק כאן..." autocomplete="off" inputmode="numeric" />
+          <button id="markUnknown1" class="ghost" title="סמן ברקוד שלא נמצא">? לא נמצא</button>
+        </div>
+        <div class="small" id="lastScanNote1">מוכן לסריקה.</div>
+
+        <div class="divider"></div>
+
+        <h2>הוספת פריט לקטלוג</h2>
+        <div class="card">
+          <label>ברקוד</label>
+          <input id="manBarcode1" placeholder="ברקוד" inputmode="numeric"/>
+          <div class="actions" style="margin-top:6px">
+            <input id="manSku1" placeholder="מק״ט" style="flex:1"/>
+            <input id="manColor1" placeholder="צבע" style="flex:1"/>
+            <select id="manSize1" style="flex:1">
+              <option value="">מידה</option>
+              <option>xs</option><option>s</option><option>m</option><option>l</option><option>xl</option><option>xxl</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button id="addManual1" class="primary">הוסף</button>
+          </div>
+          <div class="small">טיפ: Enter בכל אחד מהשדות גם יוסיף.</div>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <label>ייבוא קטלוג מקובץ (JSON/CSV)</label>
+          <input type="file" id="fileInput1" accept=".json,.csv,.txt" />
+          <div class="small">CSV בעמודות: barcode,sku,color,size</div>
+          <div class="actions"><button id="importFile1" class="accent">ייבוא</button><button id="exportJson1" class="ghost">יצוא קטלוג</button></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>חוסר במחסן</h2>
+        <div class="scanbox" style="margin:6px 0">
+          <input id="whFilter1" placeholder="חיפוש מק״ט/צבע/מידה">
+          <button id="whFilterClear1" class="ghost">נקה</button>
+        </div>
+        <div id="whShortList1" class="list" style="max-height:260px"></div>
+        <div class="actions"><button id="exportWhShort1" class="accent">יצוא חוסר מחסן (CSV)</button></div>
+
+        <div class="divider"></div>
+
+        <h2>סטטוס</h2>
+        <!-- Cloud sync controls -->
+        <div class="actions" style="margin:8px 0">
+          <button id="btnCloudPull" class="ghost">משוך מהענן</button>
+          <button id="btnCloudPush" class="accent">דחוף לענן</button>
+          <span class="small" id="cloudStat">לא מסונכרן</span>
+        </div>
+        <div class="kv"><div>בקטלוג</div><div class="num" id="statBarcodes1">0</div></div>
+        <div class="kv"><div>דגמים (SKU)</div><div class="num" id="statSkus1">0</div></div>
+        <div class="kv"><div>חוסרים ברשימה</div><div class="num" id="statMissing1">0</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2 -->
+  <section id="t2" hidden>
+    <div class="row">
+      <div class="col" style="flex:2 1 640px">
+        <h2>רשימת חוסרים (כאן: מה שנסרק = חסר — לפי סדר סריקה)</h2>
+
+        <div class="card" id="whWork2">
+          <div class="kv" style="border:0; padding:0 0 6px 0">
+            <div><b>דגם:</b> <span id="wh2Sku">—</span> · <b>צבע:</b> <span id="wh2Color">—</span></div>
+            <div class="small"><span id="wh2Index">0</span>/<span id="wh2Total">0</span></div>
+          </div>
+          <div id="wh2Hint" class="hint" style="display:none"></div>
+          <div id="wh2Sizes" class="actions" style="flex-wrap:wrap"></div>
+          <div class="actions">
+            <button id="wh2Approve" class="ok">אישור</button>
+            <button id="wh2Skip" class="ghost">דילוג</button>
+          </div>
+          <div class="small">סמן את המידות שהושלמו (ירוק). מה שלא נבחר יעבור ל"חוסר במחסן (דף 2)".</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="missingAll2" class="list"></div>
+        <div class="actions">
+          <button id="exportMissingAll2" class="accent">יצוא חוסרים (CSV)</button>
+          <button id="clearMissing2" class="danger">נקה רשימת חוסרים</button>
+          <button id="resetAll2" class="danger">איפוס כל הרשימות</button>
+        </div>
+      </div>
+      <div class="col sticky">
+        <h2>סרוק ברקוד</h2>
+        <div class="scanbox">
+          <input id="scanInput2" placeholder="סרוק כאן..." autocomplete="off" inputmode="numeric" />
+          <button id="markUnknown2" class="ghost" title="סמן ברקוד שלא נמצא">? לא נמצא</button>
+        </div>
+        <div class="small" id="lastScanNote2">מוכן לסריקה.</div>
+
+        <div class="divider"></div>
+
+        <h2>חוסר במחסן (דף 2)</h2>
+        <div class="scanbox" style="margin:6px 0">
+          <input id="whFilter2" placeholder="חיפוש מק״ט/צבע/מידה">
+          <button id="whFilterClear2" class="ghost">נקה</button>
+        </div>
+        <div id="whShortList2" class="list" style="max-height:260px"></div>
+        <div class="actions"><button id="exportWhShort2" class="accent">יצוא חוסר מחסן (CSV)</button></div>
+
+        <div class="divider"></div>
+
+        <h2>סטטוס</h2>
+        <div class="kv"><div>בקטלוג</div><div class="num" id="statBarcodes2">0</div></div>
+        <div class="kv"><div>דגמים (SKU)</div><div class="num" id="statSkus2">0</div></div>
+        <div class="kv"><div>חוסרים ברשימה</div><div class="num" id="statMissing2">0</div></div>
+        <div class="small">* קטלוג נטען בלשונית 1 ומשותף לכל המערכת.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3 -->
+  <section id="t3" hidden>
+    <div class="row">
+      <div class="col" style="flex: 1 1 640px;">
+        <h2>מיקומים במחסן</h2>
+        <div class="card">
+          <label>חיפוש מק״ט</label>
+          <div class="scanbox">
+            <input id="locSearchSku" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="לדוגמה: 12345 או A12-BC">
+            <button id="btnLocSearch" class="accent">חפש</button>
+          </div>
+          <div id="locSearchResult" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card">
+          <div id="locCollapseHeader" class="collapse-header collapsed" title="פתח/סגור רשימת מק״טים">
+            <span><strong>רשימת מק״טים</strong></span>
+            <span class="chev">▼</span>
+          </div>
+          <div id="locCollapseContent" class="collapse-content" style="display:none">
+            <div class="actions" style="justify-content:space-between; margin-top:10px">
+              <div></div>
+              <div>
+                <button class="ghost" id="btnLocExport">ייצוא</button>
+                <button class="ghost" id="btnLocImport">ייבוא</button>
+                <button class="danger" id="btnLocWipe">נקה הכל</button>
+              </div>
+            </div>
+            <table style="margin-top:8px">
+              <thead><tr><th>מק״ט</th><th>מיקום</th><th>פעולות</th></tr></thead>
+              <tbody id="locTbody"><tr><td colspan="3" class="small">אין נתונים עדיין</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card">
+          <h3 style="margin-top:0;color:var(--muted)">הוספה/עדכון</h3>
+          <label>מק״ט (אותיות/ספרות/מקפים, 2–16 תווים)</label>
+          <input id="locFormSku" type="text" placeholder="לדוגמה: 12345 או A12-BC">
+          <label>מיקום</label>
+          <div class="scanbox">
+            <input id="locFormLoc" type="text" placeholder="לדוגמה: A1-03">
+            <button class="ghost" id="btnLocAdd">הוסף חדש</button>
+            <button class="accent" id="btnLocUpdate">עדכן מיקום</button>
+          </div>
+          <div id="locFormMsg" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card">
+          <h3 style="margin:0;color:var(--muted)">ייבוא מיקומים מקובץ JSON</h3>
+          <input type="file" id="locFileInput" accept=".json" />
+          <div class="small">מבנה: מערך של אובייקטים עם שדות <code>sku</code>, <code>loc</code>.</div>
+          <div class="actions"><button id="btnLocImportFile" class="accent">ייבוא</button></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const toast = (msg) => { const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=> t.style.display='none', 1500); };
+
+  // --- Audio feedback + helpers ---
+  const AudioFX = (() => {
+    let ctx = null;
+    function ensureCtx(){ ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); return ctx; }
+    function play(freq=880, duration=120, type='sine', volume=0.12){
+      const c = ensureCtx();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain).connect(c.destination);
+      const now = c.currentTime;
+      osc.start(now);
+      osc.stop(now + duration/1000);
+    }
+    return {
+      ok:   ()=> play(1000, 120, 'square',   0.12),   // success beep
+      err:  ()=> play(220,  180, 'sawtooth', 0.14),   // error beep
+      warn: ()=> play(440,  140, 'triangle', 0.12),   // warning beep
+    };
+  })();
+
+  function feedbackOk(msg){ toast(msg); AudioFX.ok(); if(navigator.vibrate) navigator.vibrate(30); }
+  function feedbackErr(msg){ toast(msg); AudioFX.err(); if(navigator.vibrate) navigator.vibrate([40,40]); }
+
+  // Tabs
+  $$('.tab').forEach(tab => tab.addEventListener('click', () => {
+    $$('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    ['t1','t2','t3'].forEach(id => { $('#'+id).hidden = (id !== target); });
+  }));
+
+  // LocalStorage helpers
+  const LS = {
+    get: (k,def) => { try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? def; }catch(e){ return def; } },
+    set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
+  };
+  const KEYS = {
+    barcodes: 'barcodes',
+    // Tab1
+    missing1: 'missing',
+    scans1:   'scans',
+    whShort1: 'wh_short',
+    // Tab2 (FIFO)
+    missing2: 'missing_scanned',
+    scans2:   'scans_scanned',
+    whShort2: 'wh_short_scanned',
+    order2:   'order_missing_scanned',
+    // Locations
+    locDB:    'warehouseMiniDB'
+  };
+
+  // Helpers
+  const deriveCatalog = (barcodes) => {
+    const cat = {};
+    for(const [code,meta] of Object.entries(barcodes||{})){
+      if(!meta||!meta.sku||!meta.color||!meta.size) continue;
+      const sku=String(meta.sku), color=String(meta.color), size=String(meta.size).toLowerCase();
+      if(!cat[sku]) cat[sku] = {mapColorSizes:{}};
+      if(!cat[sku].mapColorSizes[color]) cat[sku].mapColorSizes[color] = new Set();
+      cat[sku].mapColorSizes[color].add(size);
+    }
+    return cat;
+  };
+  const missingCount = (miss) => { let n=0; for(const s of Object.keys(miss||{})){ for(const c of Object.keys(miss[s]||{})) n+=miss[s][c].length; } return n; };
+  const escapeHtml = (s)=> String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const downloadFile = (filename, text)=>{ const blob=new Blob([text],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0); };
+  const csvToMap = (text)=>{
+    const delim = text.includes('\\t') ? '\\t' : (text.includes(';') ? ';' : ',');
+    const lines=text.split(/\\r?\\n/).filter(x=>x.trim().length); if(!lines.length) return {};
+    const header=lines[0].split(delim).map(x=>x.trim().toLowerCase());
+    const bi=header.indexOf('barcode'),si=header.indexOf('sku'),ci=header.indexOf('color'),zi=header.indexOf('size'); if(bi<0||si<0||ci<0||zi<0) return {};
+    const map={}; for(let i=1;i<lines.length;i++){ const cols=lines[i].split(delim); const bc=(cols[bi]||'').trim(); const sku=(cols[si]||'').trim(); const color=(cols[ci]||'').trim(); const size=(cols[zi]||'').trim().toLowerCase(); if(!bc||!sku||!color||!size) continue; map[bc]={sku,color,size}; }
+    return map;
+  };
+  const missingToCsv = (obj)=>{
+    const rows=[["sku","color","sizes"]];
+    for(const sku of Object.keys(obj||{})){
+      for(const color of Object.keys(obj[sku]||{})){
+        rows.push([sku,color,(obj[sku][color]||[]).join('|')]);
+      }
+    }
+    return rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\\n');
+  };
+
+  // -------------------------------------------------------------
+  // Constants
+  // The minimum length for a barcode to be considered valid. If a scanned
+  // sequence is shorter than this value, it is treated as a failed scan
+  // and will trigger an error feedback. This constant is used by both
+  // manual input handlers and the global scanner.
+
+  // Shared data
+  let barcodes = LS.get(KEYS.barcodes, {});
+  let catalog  = deriveCatalog(barcodes);
+
+  function findBarcodeByTriple(sku,color,size){
+    size=String(size).toLowerCase();
+    for(const [bc,meta] of Object.entries(barcodes)){
+      if(String(meta.sku)===String(sku) && String(meta.color)===String(color) && String(meta.size).toLowerCase()===size){
+        return bc;
+      }
+    }
+    return null;
+  }
+
+  // TAB 1
+  let scans1   = LS.get(KEYS.scans1, {});
+  let missing1 = LS.get(KEYS.missing1, {});
+  let whShort1 = LS.get(KEYS.whShort1, {});
+
+  function ensureMissingSkuLoaded1(sku, color){
+    // Load only the specific color for this SKU into the missing list.
+    // If the entry already exists for this sku/color, do nothing.
+    if(missing1[sku] && missing1[sku][color]) return;
+    const entry = catalog[sku]; if(!entry) return;
+    // Ensure the container for the SKU
+    if(!missing1[sku]) missing1[sku] = {};
+    // Pull only the set of sizes for the scanned color
+    const setSizes = entry.mapColorSizes?.[color];
+    if(!setSizes) return; // Color not found in catalog; nothing to load
+    missing1[sku][color] = Array.from(setSizes).sort();
+    LS.set(KEYS.missing1, missing1);
+  }
+  function removeFromMissing1(sku,color,size){
+    if(!missing1[sku] || !missing1[sku][color]) return;
+    const arr = new Set(missing1[sku][color]); arr.delete(size);
+    if(arr.size) missing1[sku][color] = Array.from(arr).sort(); else delete missing1[sku][color];
+    if(missing1[sku] && Object.keys(missing1[sku]).length===0) delete missing1[sku];
+    LS.set(KEYS.missing1, missing1);
+  }
+  function renderMissingAll1(){
+    const box = $('#missingAll1'); box.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(missing1).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין שורות ברשימת החוסרים. סרוק דגם כדי לטעון חוסרים שלו.</div>'; }
+    skus.forEach(sku => {
+      const map = missing1[sku];
+      Object.keys(map).sort().forEach(color => {
+        const row = document.createElement('div'); row.className='kv';
+        const pills = map[color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+      });
+    });
+    box.appendChild(frag);
+    $('#statMissing1').textContent = missingCount(missing1);
+    buildWhQueue1();
+  }
+
+  function renderWhShort1(){
+    const box = $('#whShortList1'); box.innerHTML='';
+    const filter = String($('#whFilter1')?.value || '').trim().toLowerCase();
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(whShort1).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין חוסר במחסן.</div>'; return; }
+    let shown = 0;
+    skus.forEach(sku=>{
+      const map = whShort1[sku];
+      Object.keys(map).sort().forEach(color=>{
+        const sizesAll = map[color] || [];
+        let sizes = sizesAll;
+        if(filter){
+          const skuHit = String(sku).toLowerCase().includes(filter);
+          const colorHit = String(color).toLowerCase().includes(filter);
+          const sizeHits = sizesAll.filter(sz=>String(sz).toLowerCase().includes(filter));
+          sizes = (skuHit || colorHit) ? sizesAll : sizeHits;
+          if(sizes.length===0) return;
+        }
+        const row = document.createElement('div'); row.className='kv';
+        const pills = sizes.map(sz=>`<button class="pill small js-del-pill" data-sku="${escapeHtml(sku)}" data-color="${escapeHtml(color)}" data-size="${escapeHtml(sz)}" title="לחץ כדי להסיר">${sz.toUpperCase()} ✕</button>`).join(' ');
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+        shown++;
+      });
+    });
+    if(shown===0){ box.innerHTML = '<div class="small">אין תוצאות תואמות לחיפוש.</div>'; return; }
+    box.appendChild(frag);
+    box.querySelectorAll('.js-del-pill').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const sku = btn.getAttribute('data-sku');
+        const color = btn.getAttribute('data-color');
+        const size = String(btn.getAttribute('data-size')).toLowerCase();
+        const arr = new Set(whShort1[sku]?.[color] || []);
+        if(!arr.has(size)) return;
+        arr.delete(size);
+        if(arr.size){ whShort1[sku][color] = Array.from(arr).sort(); }
+        else { delete whShort1[sku][color]; if(Object.keys(whShort1[sku]||{}).length===0) delete whShort1[sku]; }
+        LS.set(KEYS.whShort1, whShort1);
+        renderWhShort1();
+        toast(`הוסר חוסר: ${sku} / ${color} / ${size.toUpperCase()}`);
+      });
+    });
+  }
+
+  function updateStats1(){
+    $('#statBarcodes1').textContent = Object.keys(barcodes).length;
+    $('#statSkus1').textContent = Object.keys(catalog).length;
+    $('#statMissing1').textContent = missingCount(missing1);
+  }
+  function renderAll1(){ renderMissingAll1(); updateStats1(); renderWhShort1(); }
+
+  let whQueue1 = []; let whIndex1 = 0; let whSelected1 = new Set();
+  function buildWhQueue1(){ whQueue1 = []; whIndex1=0; whSelected1=new Set();
+    Object.keys(missing1).sort().forEach(sku=>{
+      const map = missing1[sku];
+      Object.keys(map).sort().forEach(color=>{ if(map[color] && map[color].length) whQueue1.push({sku,color}); });
+    });
+    renderWhWorkRow1();
+  }
+  function getLocationHint(sku){
+    const arr = LS.get(KEYS.locDB, []);
+    const hit = (arr||[]).find(x=>String(x.sku)===String(sku));
+    return hit ? hit.loc : null;
+  }
+  function renderWhWorkRow1(){
+    const skuEl=$('#wh1Sku'), colorEl=$('#wh1Color'), sizesEl=$('#wh1Sizes');
+    const idxEl=$('#wh1Index'), totEl=$('#wh1Total'), hintEl=$('#wh1Hint');
+    if(!whQueue1.length){ skuEl.textContent='—'; colorEl.textContent='—'; sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>'; idxEl.textContent='0'; totEl.textContent='0'; hintEl.style.display='none'; return; }
+    if(whIndex1>=whQueue1.length) whIndex1=0; whSelected1 = new Set();
+    const {sku,color} = whQueue1[whIndex1];
+    skuEl.textContent = sku; colorEl.textContent = color; idxEl.textContent = String(whIndex1+1); totEl.textContent = String(whQueue1.length);
+    const sizes = (missing1[sku] && missing1[sku][color]) ? [...missing1[sku][color]] : [];
+    sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
+    sizesEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ const sz=btn.dataset.size; if(whSelected1.has(sz)){ whSelected1.delete(sz); btn.classList.remove('found'); } else { whSelected1.add(sz); btn.classList.add('found'); } });
+    });
+    const loc = getLocationHint(sku);
+    if(loc){ hintEl.textContent = `רמז מיקום: ${loc}`; hintEl.style.display='block'; } else { hintEl.style.display='none'; }
+  }
+  $('#wh1Skip').addEventListener('click', ()=>{ if(!whQueue1.length) return; whIndex1=(whIndex1+1)%whQueue1.length; renderWhWorkRow1(); });
+  $('#wh1Approve').addEventListener('click', ()=>{
+    if(!whQueue1.length) return;
+    const {sku,color} = whQueue1[whIndex1];
+    const allSizes = (missing1[sku] && missing1[sku][color]) ? new Set(missing1[sku][color]) : new Set();
+    delete missing1[sku][color]; if(missing1[sku] && Object.keys(missing1[sku]).length===0) delete missing1[sku]; LS.set(KEYS.missing1, missing1);
+    const notFound = [...allSizes].filter(sz=>!whSelected1.has(sz));
+    if(notFound.length){ whShort1[sku]=whShort1[sku]||{}; whShort1[sku][color]=Array.from(new Set([...(whShort1[sku][color]||[]), ...notFound])).sort(); LS.set(KEYS.whShort1, whShort1); }
+    whSelected1.forEach(sz=>{ scans1[sku]=scans1[sku]||{}; scans1[sku][color]=scans1[sku][color]||[]; if(!scans1[sku][color].includes(sz)) scans1[sku][color].push(sz); }); LS.set(KEYS.scans1, scans1);
+    renderAll1(); toast('עודכן');
+  });
+
+  // Scan input (tab1) + import/export
+  const scanInput1 = $('#scanInput1');
+  scanInput1.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      const v = scanInput1.value.trim();
+      if(!v){
+        feedbackErr('לא הוזן ברקוד');
+        return;
+      }
+      if(v.length < SCAN_MIN_LEN){
+        feedbackErr('סריקה קצרה מדי — נסה שוב');
+        scanInput1.value = '';
+        return;
+      }
+      handleScan1(v);
+      scanInput1.value = '';
+    }
+  });
+  let timer1=null; scanInput1.addEventListener('input', ()=>{ const v=scanInput1.value.trim(); if(v.length<6) return; if(timer1) clearTimeout(timer1); timer1=setTimeout(()=>{ if(scanInput1.value.trim()===v){ handleScan1(v); scanInput1.value=''; } },150); });
+  $('#importFile1').addEventListener('click', ()=> importCatalog1());
+  $('#fileInput1').addEventListener('change', ()=> importCatalog1());
+  $('#exportJson1').addEventListener('click', ()=> downloadFile('barcodes.json', JSON.stringify(barcodes,null,2)));
+  $('#exportMissingAll1').addEventListener('click', ()=> downloadFile('missing.csv', missingToCsv(missing1)));
+  $('#exportWhShort1').addEventListener('click', ()=> downloadFile('warehouse_shortage.csv', missingToCsv(whShort1)));
+  $('#clearMissing1').addEventListener('click', ()=>{ if(confirm('לנקות את רשימת החוסרים?')){ missing1={}; LS.set(KEYS.missing1,missing1); renderAll1(); }});
+  $('#resetAll1').addEventListener('click', ()=>{ if(confirm('לאפס חוסרים/חוסר מחסן/סריקות?')){ missing1={}; whShort1={}; scans1={}; LS.set(KEYS.missing1,missing1); LS.set(KEYS.whShort1,whShort1); LS.set(KEYS.scans1,scans1); renderAll1(); }});
+  $('#markUnknown1').addEventListener('click', () => {
+    const v = scanInput1.value.trim();
+    if(!v){
+      feedbackErr('אין ברקוד בשדה');
+      return;
+    }
+    feedbackErr('לא נמצא בקטלוג');
+  });
+
+  function handleScan1(code){
+    const meta = barcodes[code];
+    if(!meta){
+      $('#lastScanNote1').textContent = `ברקוד לא נמצא בקטלוג: ${code}`;
+      feedbackErr('לא נמצא בקטלוג');
+      return;
+    }
+    const sku = String(meta.sku), color = String(meta.color), size = String(meta.size).toLowerCase();
+    ensureMissingSkuLoaded1(sku, color);
+    removeFromMissing1(sku, color, size);
+    scans1[sku] = scans1[sku] || {};
+    scans1[sku][color] = scans1[sku][color] || [];
+    if(!scans1[sku][color].includes(size)) scans1[sku][color].push(size);
+    LS.set(KEYS.scans1, scans1);
+    $('#lastScanNote1').textContent = `נסרק ✓ ${code} → ${sku} / ${color} / ${size.toUpperCase()}`;
+    feedbackOk('נסרק בהצלחה');
+    renderAll1();
+  }
+
+  async function importCatalog1(){
+    try{
+      const f = $('#fileInput1').files[0]; if(!f){ toast('לא נבחר קובץ'); return; }
+      const text = await f.text(); let map={};
+      try{ map = JSON.parse(text); if(Array.isArray(map)){ const tmp={}; for(const row of map){ const bc=String(row.barcode??'').trim(); if(!bc) continue; tmp[bc]={sku:String(row.sku),color:String(row.color),size:String(row.size).toLowerCase()}; } map=tmp; } }catch(e){
+        map = csvToMap(text);
+      }
+      if(Object.keys(map).length===0){ toast('קובץ לא מזוהה'); return; }
+
+      // Uniqueness check: no duplicate (sku,color,size) mapped to different barcodes
+      const reverse = new Map();
+      for(const [bc,meta] of Object.entries(map)){
+        const key = `${meta.sku}__${meta.color}__${String(meta.size).toLowerCase()}`;
+        if(reverse.has(key) && reverse.get(key)!==bc){
+          toast('שגיאה: כפילות של אותו דגם/צבע/מידה עם ברקודים שונים');
+          return;
+        }
+      }
+
+      barcodes = map; LS.set(KEYS.barcodes,barcodes); catalog = deriveCatalog(barcodes); renderAll1(); updateStats2(); toast('ייבוא קטלוג בוצע');
+    }catch(e){ console.error(e); toast('שגיאה בייבוא'); }
+  }
+
+  function addManual1(){
+    const bc=$('#manBarcode1').value.trim(); const sku=$('#manSku1').value.trim(); const color=$('#manColor1').value.trim(); const size=$('#manSize1').value.trim().toLowerCase();
+    if(!bc||!sku||!color||!size){ toast('נא למלא ברקוד/מק״ט/צבע/מידה'); return; }
+    if(barcodes[bc]){ toast('אי אפשר: הברקוד כבר קיים בקטלוג'); return; }
+    const existingBc = findBarcodeByTriple(sku,color,size);
+    if(existingBc){ toast(`אי אפשר: דגם/צבע/מידה אלה כבר משויכים לברקוד ${existingBc}`); return; }
+    barcodes[bc]={sku,color,size}; LS.set(KEYS.barcodes,barcodes); catalog=deriveCatalog(barcodes);
+    $('#manBarcode1').value=''; $('#manSku1').value=''; $('#manColor1').value=''; $('#manSize1').value=''; updateStats1(); updateStats2(); toast('נוסף לקטלוג');
+  }
+  $('#addManual1').addEventListener('click', addManual1);
+  ['manBarcode1','manSku1','manColor1','manSize1'].forEach(id=> $('#'+id).addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); addManual1(); }}));
+
+  // TAB 2
+  let scans2   = LS.get(KEYS.scans2, {});
+  let missing2 = LS.get(KEYS.missing2, {});
+  let whShort2 = LS.get(KEYS.whShort2, {});
+  let order2   = LS.get(KEYS.order2, []);
+
+  const pairKey = (p)=> `${p.sku}__${p.color}`;
+  function ensurePairInOrder(sku,color){
+    const key = pairKey({sku,color});
+    if(!order2.some(p=>pairKey(p)===key)){
+      order2.push({sku,color});
+      LS.set(KEYS.order2, order2);
+    }
+  }
+  function removePairFromOrder(sku,color){
+    const key = pairKey({sku,color});
+    order2 = order2.filter(p => pairKey(p)!==key);
+    LS.set(KEYS.order2, order2);
+  }
+
+  function renderMissingAll2(){
+    const box = $('#missingAll2'); box.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    if(order2.length===0){ box.innerHTML = '<div class="small">הרשימה ריקה — סרוק פריטים חסרים כדי להוסיף.</div>'; }
+    order2.forEach(({sku,color})=>{
+      if(!missing2[sku] || !missing2[sku][color] || !missing2[sku][color].length) return;
+      const row = document.createElement('div'); row.className='kv';
+      const pills = missing2[sku][color].map(sz=>`<span class="pill small">${sz.toUpperCase()}</span>`).join(' ');
+      row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+      frag.appendChild(row);
+    });
+    box.appendChild(frag);
+    $('#statMissing2').textContent = missingCount(missing2);
+    buildWhQueue2();
+  }
+
+  function renderWhShort2(){
+    const box = $('#whShortList2'); box.innerHTML='';
+    const filter = String($('#whFilter2')?.value || '').trim().toLowerCase();
+    const frag = document.createDocumentFragment();
+    const skus = Object.keys(whShort2).sort();
+    if(skus.length===0){ box.innerHTML = '<div class="small">אין חוסר במחסן.</div>'; return; }
+    let shown = 0;
+    skus.forEach(sku=>{
+      const map = whShort2[sku];
+      Object.keys(map).sort().forEach(color=>{
+        const sizesAll = map[color] || [];
+        let sizes = sizesAll;
+        if(filter){
+          const skuHit = String(sku).toLowerCase().includes(filter);
+          const colorHit = String(color).toLowerCase().includes(filter);
+          const sizeHits = sizesAll.filter(sz=>String(sz).toLowerCase().includes(filter));
+          sizes = (skuHit || colorHit) ? sizesAll : sizeHits;
+          if(sizes.length===0) return;
+        }
+        const row = document.createElement('div'); row.className='kv';
+        const pills = sizes.map(sz=>`<button class="pill small js-del-pill2" data-sku="${escapeHtml(sku)}" data-color="${escapeHtml(color)}" data-size="${escapeHtml(sz)}" title="לחץ כדי להסיר">${sz.toUpperCase()} ✕</button>`).join(' ');
+        row.innerHTML = `<div><b>${escapeHtml(sku)}</b> · ${escapeHtml(color)}</div><div>${pills}</div>`;
+        frag.appendChild(row);
+        shown++;
+      });
+    });
+    if(shown===0){ box.innerHTML = '<div class="small">אין תוצאות תואמות לחיפוש.</div>'; return; }
+    box.appendChild(frag);
+    box.querySelectorAll('.js-del-pill2').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const sku = btn.getAttribute('data-sku');
+        const color = btn.getAttribute('data-color');
+        const size = String(btn.getAttribute('data-size')).toLowerCase();
+        const arr = new Set(whShort2[sku]?.[color] || []);
+        if(!arr.has(size)) return;
+        arr.delete(size);
+        if(arr.size){ whShort2[sku][color] = Array.from(arr).sort(); }
+        else { delete whShort2[sku][color]; if(Object.keys(whShort2[sku]||{}).length===0) delete whShort2[sku]; }
+        LS.set(KEYS.whShort2, whShort2);
+        renderWhShort2();
+        toast(`הוסר חוסר: ${sku} / ${color} / ${size.toUpperCase()}`);
+      });
+    });
+  }
+
+  function updateStats2(){
+    $('#statBarcodes2').textContent = Object.keys(barcodes).length;
+    const skusSet = new Set(Object.values(barcodes).map(v=>String(v.sku)));
+    $('#statSkus2').textContent = skusSet.size;
+  }
+  function renderAll2(){ renderMissingAll2(); updateStats2(); renderWhShort2(); }
+
+  let whQueue2 = []; let whIndex2 = 0; let whSelected2 = new Set();
+  function buildWhQueue2(){ whQueue2 = []; whIndex2=0; whSelected2=new Set();
+    order2.forEach(({sku,color})=>{
+      if(missing2[sku] && missing2[sku][color] && missing2[sku][color].length) whQueue2.push({sku,color});
+    });
+    renderWhWorkRow2();
+  }
+  function renderWhWorkRow2(){
+    const skuEl=$('#wh2Sku'), colorEl=$('#wh2Color'), sizesEl=$('#wh2Sizes');
+    const idxEl=$('#wh2Index'), totEl=$('#wh2Total');
+    if(!whQueue2.length){
+      skuEl.textContent='—'; colorEl.textContent='—';
+      sizesEl.innerHTML='<div class="small">אין שורות לעבודה.</div>';
+      idxEl.textContent='0'; totEl.textContent='0'; return;
+    }
+    if(whIndex2>=whQueue2.length) whIndex2=0; whSelected2 = new Set();
+    const {sku,color} = whQueue2[whIndex2];
+    skuEl.textContent = sku; colorEl.textContent = color; idxEl.textContent = String(whIndex2+1); totEl.textContent = String(whQueue2.length);
+    const sizes = (missing2[sku] && missing2[sku][color]) ? [...missing2[sku][color]] : [];
+    sizesEl.innerHTML = sizes.map(sz=>`<button class="pill" data-size="${sz}" type="button">${sz.toUpperCase()}</button>`).join('');
+    sizesEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const sz=btn.dataset.size;
+        if(whSelected2.has(sz)){ whSelected2.delete(sz); btn.classList.remove('found'); }
+        else { whSelected2.add(sz); btn.classList.add('found'); }
+      });
+    });
+    const hintEl = $('#wh2Hint');
+    const loc = getLocationHint(sku);
+    if(loc){ hintEl.textContent = `רמז מיקום: ${loc}`; hintEl.style.display='block'; } else { hintEl.style.display='none'; }
+  }
+  $('#wh2Skip').addEventListener('click', ()=>{ if(!whQueue2.length) return; whIndex2=(whIndex2+1)%whQueue2.length; renderWhWorkRow2(); });
+  $('#wh2Approve').addEventListener('click', ()=>{
+    if(!whQueue2.length) return;
+    const {sku,color} = whQueue2[whIndex2];
+    const allSizes = (missing2[sku] && missing2[sku][color]) ? new Set(missing2[sku][color]) : new Set();
+    delete missing2[sku][color]; if(missing2[sku] && Object.keys(missing2[sku]).length===0) delete missing2[sku];
+    LS.set(KEYS.missing2, missing2);
+    removePairFromOrder(sku,color);
+    const notFound = [...allSizes].filter(sz=>!whSelected2.has(sz));
+    if(notFound.length){ whShort2[sku]=whShort2[sku]||{}; whShort2[sku][color]=Array.from(new Set([...(whShort2[sku][color]||[]), ...notFound])).sort(); LS.set(KEYS.whShort2, whShort2); }
+    whSelected2.forEach(sz=>{ scans2[sku]=scans2[sku]||{}; scans2[sku][color]=scans2[sku][color]||[]; if(!scans2[sku][color].includes(sz)) scans2[sku][color].push(sz); }); LS.set(KEYS.scans2, scans2);
+    renderAll2(); toast('עודכן');
+  });
+
+  // Scan input (tab2)
+  const scanInput2 = $('#scanInput2');
+  scanInput2.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      const v = scanInput2.value.trim();
+      if(!v){
+        feedbackErr('לא הוזן ברקוד');
+        return;
+      }
+      if(v.length < SCAN_MIN_LEN){
+        feedbackErr('סריקה קצרה מדי — נסה שוב');
+        scanInput2.value = '';
+        return;
+      }
+      handleScan2(v);
+      scanInput2.value = '';
+    }
+  });
+  let timer2=null; scanInput2.addEventListener('input', ()=>{ const v=scanInput2.value.trim(); if(v.length<6) return; if(timer2) clearTimeout(timer2); timer2=setTimeout(()=>{ if(scanInput2.value.trim()===v){ handleScan2(v); scanInput2.value=''; } },150); });
+  $('#markUnknown2').addEventListener('click', () => {
+    const v = scanInput2.value.trim();
+    if(!v){
+      feedbackErr('אין ברקוד בשדה');
+      return;
+    }
+    feedbackErr('לא נמצא בקטלוג');
+  });
+  $('#exportMissingAll2').addEventListener('click', ()=> downloadFile('missing_scanned.csv', missingToCsv(missing2)));
+  $('#exportWhShort2').addEventListener('click', ()=> downloadFile('warehouse_shortage_scanned.csv', missingToCsv(whShort2)));
+  $('#clearMissing2').addEventListener('click', ()=>{ if(confirm('לנקות את רשימת החוסרים?')){ missing2={}; order2=[]; LS.set(KEYS.missing2,missing2); LS.set(KEYS.order2,order2); renderAll2(); }});
+  $('#resetAll2').addEventListener('click', ()=>{ if(confirm('לאפס חוסרים/חוסר מחסן/סריקות (דף 2)?')){ missing2={}; whShort2={}; scans2={}; order2=[]; LS.set(KEYS.missing2,missing2); LS.set(KEYS.whShort2,whShort2); LS.set(KEYS.scans2,scans2); LS.set(KEYS.order2,order2); renderAll2(); }});
+
+  function handleScan2(code){
+    const meta = barcodes[code];
+    if(!meta){
+      $('#lastScanNote2').textContent = `ברקוד לא נמצא בקטלוג: ${code}`;
+      feedbackErr('לא נמצא בקטלוג');
+      return;
+    }
+    const sku = String(meta.sku), color = String(meta.color), size = String(meta.size).toLowerCase();
+    const isNewPair = !(missing2[sku] && missing2[sku][color] && missing2[sku][color].length);
+    missing2[sku] = missing2[sku] || {};
+    const set = new Set(missing2[sku][color] || []);
+    set.add(size);
+    missing2[sku][color] = Array.from(set).sort();
+    LS.set(KEYS.missing2, missing2);
+    if(isNewPair){ ensurePairInOrder(sku, color); }
+    $('#lastScanNote2').textContent = `נוסף לרשימת חוסרים: ${sku} / ${color} / ${size.toUpperCase()}`;
+    feedbackOk('נוסף לרשימה');
+    renderAll2();
+  }
+
+  // TAB 3 (locations)
+  const LSK = KEYS.locDB;
+  const locLoad = ()=> LS.get(LSK, []);
+  const locSave = (arr)=> LS.set(LSK, arr);
+  const validSku = (v)=> /^[A-Za-z0-9\\-]{2,16}$/.test(String(v||'').trim());
+  function renderLocTable(){
+    const tbody = $('#locTbody'); if(!tbody) return;
+    tbody.innerHTML='';
+    const data = locLoad().sort((a,b)=> String(a.sku).localeCompare(String(b.sku)));
+    if(!data.length){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=3; td.className='small'; td.textContent='אין נתונים עדיין'; tr.appendChild(td); tbody.appendChild(tr); return; }
+    for(const row of data){
+      const tr=document.createElement('tr');
+      const tdSku=document.createElement('td'); const tdLoc=document.createElement('td'); const tdAct=document.createElement('td');
+      tdSku.textContent=row.sku; tdLoc.textContent=row.loc;
+      const copy=document.createElement('button'); copy.textContent='העתק'; copy.className='ghost'; copy.onclick=async()=>{ await navigator.clipboard.writeText(row.loc); toast('הועתק'); };
+      const del=document.createElement('button'); del.textContent='מחק'; del.className='danger'; del.onclick=()=>{ const arr=locLoad().filter(x=>String(x.sku)!==String(row.sku)); locSave(arr); renderLocTable(); toast('נמחק'); };
+      tdAct.append(copy,' ',del); tr.append(tdSku,tdLoc,tdAct); tbody.appendChild(tr);
+    }
+  }
+  function doLocSearch(){
+    const sku = String($('#locSearchSku').value||'').trim();
+    const r = locLoad().find(x=>String(x.sku)===sku);
+    const box = $('#locSearchResult');
+    if(r){
+      box.textContent = `מיקום: ${r.loc}`;
+      box.classList.add('big-loc');
+      box.style.display = 'block';
+    } else {
+      box.textContent = `לא נמצא מק״ט ${sku}.`;
+      box.classList.remove('big-loc');
+      box.style.display = 'block';
+    }
+  }
+  $('#btnLocSearch').addEventListener('click', doLocSearch);
+  $('#locSearchSku').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); doLocSearch(); }});
+
+  const locHeader = $('#locCollapseHeader');
+  const locContent = $('#locCollapseContent');
+  if(locHeader){
+    locHeader.addEventListener('click', ()=>{
+      const isHidden = locContent.style.display === 'none' || locContent.style.display === '';
+      locContent.style.display = isHidden ? 'block' : 'none';
+      locHeader.classList.toggle('collapsed', !isHidden);
+    });
+  }
+
+  $('#btnLocAdd').addEventListener('click', ()=>{
+    const sku = String($('#locFormSku').value||'').trim();
+    const loc = String($('#locFormLoc').value||'').trim();
+    if(!validSku(sku)) return showLocMsg('מק״ט לא תקין. מותר אותיות/ספרות/מקף, אורך 2–16.');
+    if(!loc) return showLocMsg('צריך למלא מיקום.');
+    const arr=locLoad(); if(arr.some(x=>String(x.sku)===sku)) return showLocMsg('קיים כבר מק״ט כזה. השתמש בעדכון.');
+    arr.push({sku,loc}); locSave(arr); renderLocTable(); showLocMsg('נוסף בהצלחה.');
+  });
+  $('#btnLocUpdate').addEventListener('click', ()=>{
+    const sku = String($('#locFormSku').value||'').trim();
+    const loc = String($('#locFormLoc').value||'').trim();
+    if(!validSku(sku)) return showLocMsg('מק״ט לא תקין. מותר אותיות/ספרות/מקף, אורך 2–16.');
+    if(!loc) return showLocMsg('צריך למלא מיקום.');
+    const arr=locLoad(); const idx=arr.findIndex(x=>String(x.sku)===sku);
+    if(idx<0) return showLocMsg('לא קיים מק״ט כזה. הוסף חדש.');
+    arr[idx].loc=loc; locSave(arr); renderLocTable(); showLocMsg('עודכן בהצלחה.');
+  });
+  function showLocMsg(msg){ const el=$('#locFormMsg'); el.textContent=msg; el.style.display='block'; setTimeout(()=> el.style.display='none', 1500); }
+
+  $('#btnLocExport').addEventListener('click', ()=>{
+    const data = locLoad();
+    downloadFile('warehouse-mini.json', JSON.stringify(data,null,2));
+  });
+  $('#btnLocImport').addEventListener('click', ()=>{ $('#locFileInput').click(); });
+  $('#btnLocWipe').addEventListener('click', ()=>{ if(confirm('למחוק את כל נתוני המיקומים?')){ localStorage.removeItem(KEYS.locDB); renderLocTable(); toast('נוקה.'); }});
+  $('#btnLocImportFile').addEventListener('click', async ()=>{
+    const f = $('#locFileInput').files[0]; if(!f) return toast('לא נבחר קובץ');
+    const text = await f.text();
+    try{
+      const data = JSON.parse(text);
+      if(!Array.isArray(data)) throw new Error('bad');
+      const clean=[]; for(const r of data){ if(r && r.sku && r.loc && /^[A-Za-z0-9\\-]{2,16}$/.test(String(r.sku))){ clean.push({sku:String(r.sku), loc:String(r.loc)}); } }
+      localStorage.setItem(KEYS.locDB, JSON.stringify(clean)); renderLocTable(); toast('ייבוא הושלם');
+    }catch(e){ toast('שגיאה בייבוא'); }
+  });
+
+  // Filters for warehouse shortage lists
+  $('#whFilter1')?.addEventListener('input', ()=> renderWhShort1());
+  $('#whFilterClear1')?.addEventListener('click', ()=>{ const i=$('#whFilter1'); if(i){ i.value=''; renderWhShort1(); }});
+  $('#whFilter2')?.addEventListener('input', ()=> renderWhShort2());
+  $('#whFilterClear2')?.addEventListener('click', ()=>{ const i=$('#whFilter2'); if(i){ i.value=''; renderWhShort2(); }});
+
+  // -------------------------------------------------------------
+  // Cloud synchronization support
+  //
+  // The system currently stores all data in localStorage which is tied to
+  // a single browser/device. To allow backup and sharing between devices,
+  // you can connect to a simple Web App endpoint (e.g. Google Apps Script)
+  // that stores the entire state. The following helpers package the current
+  // state, send it to the server (push), retrieve it (pull) and apply it.
+  //
+  // Configuration: replace the URL and token with your own values. If you
+  // do not wish to enable cloud sync, leave them as-is and the buttons
+  // will effectively do nothing.
+  const CLOUD = {
+    url: 'PUT_WEB_APP_URL_HERE',   // ← Replace with your Web App URL
+    token: 'PUT_SECRET_TOKEN_HERE' // ← Replace with your secret token
+  };
+
+  /**
+   * Build a serializable object representing the current local state. This
+   * includes the catalog (barcodes array), missing and warehouse shortage
+   * lists for both tabs, scans history, FIFO order for tab2, and the local
+   * warehouse location database. The structure should mirror the data
+   * expected by the server.
+   */
+  function buildStateForCloud() {
+    // Convert the barcode map into an array of simple objects
+    const bcArr = Object.entries(barcodes || {}).map(([barcode, meta]) => ({
+      barcode,
+      sku: String(meta.sku),
+      color: String(meta.color),
+      size: String(meta.size).toLowerCase()
+    }));
+    return {
+      barcodes: bcArr,
+      missing1: LS.get(KEYS.missing1, {}),
+      whShort1: LS.get(KEYS.whShort1, {}),
+      scans1:   LS.get(KEYS.scans1, {}),
+      missing2: LS.get(KEYS.missing2, {}),
+      whShort2: LS.get(KEYS.whShort2, {}),
+      scans2:   LS.get(KEYS.scans2, {}),
+      order2:   LS.get(KEYS.order2, []),
+      locDB:    LS.get(KEYS.locDB, [])
+    };
+  }
+
+  /**
+   * Apply a state object retrieved from the cloud. This replaces the
+   * existing local state with the incoming data. After applying, it
+   * regenerates the catalog and triggers renders for all tabs.
+   */
+  function applyCloudState(st) {
+    // rebuild barcode map
+    const bcMap = {};
+    (st.barcodes || []).forEach(row => {
+      const { barcode, sku, color, size } = row;
+      if (!barcode || !sku || !color || !size) return;
+      bcMap[barcode] = { sku: String(sku), color: String(color), size: String(size).toLowerCase() };
+    });
+    barcodes = bcMap;
+    LS.set(KEYS.barcodes, barcodes);
+    // copy all other structures
+    missing1 = st.missing1 || {};
+    whShort1 = st.whShort1 || {};
+    scans1   = st.scans1 || {};
+    missing2 = st.missing2 || {};
+    whShort2 = st.whShort2 || {};
+    scans2   = st.scans2 || {};
+    order2   = st.order2 || [];
+    LS.set(KEYS.missing1, missing1);
+    LS.set(KEYS.whShort1, whShort1);
+    LS.set(KEYS.scans1, scans1);
+    LS.set(KEYS.missing2, missing2);
+    LS.set(KEYS.whShort2, whShort2);
+    LS.set(KEYS.scans2, scans2);
+    LS.set(KEYS.order2, order2);
+    LS.set(KEYS.locDB, st.locDB || []);
+    // derive catalog and re-render
+    catalog = deriveCatalog(barcodes);
+    renderAll1();
+    renderAll2();
+    renderLocTable();
+  }
+
+  // Version tracking: increments on each successful push/pull
+  let cloudVersion = 0;
+
+  /**
+   * Pull the latest state from the cloud. If successful, updates the
+   * local store and refreshes the UI. Displays a status in the footer
+   * and plays a feedback sound.
+   */
+  async function cloudPull() {
+    try {
+      if (!CLOUD.url) return;
+      const res = await fetch(`${CLOUD.url}?action=pull`, { method: 'GET' });
+      const data = await res.json();
+      applyCloudState(data);
+      cloudVersion = Number(data.version || 0);
+      const stat = document.getElementById('cloudStat');
+      if (stat) stat.textContent = `משוך: v${cloudVersion} • ${data.lastSync || ''}`;
+      feedbackOk('נטען מהענן');
+    } catch (e) {
+      console.error(e);
+      feedbackErr('שגיאה במשיכת נתונים');
+    }
+  }
+
+  /**
+   * Push the local state to the cloud. Sends the current state along with
+   * the expected cloud version. If the server detects a version conflict,
+   * it returns the current cloud state; in that case we pull and inform
+   * the user. On success, displays the new version in the status bar.
+   */
+  async function cloudPush() {
+    try {
+      if (!CLOUD.url) return;
+      const state = buildStateForCloud();
+      const res = await fetch(CLOUD.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: CLOUD.token, expectedVersion: cloudVersion, state })
+      });
+      const data = await res.json();
+      if (data.conflict) {
+        // Version mismatch: fetch latest
+        feedbackErr('קונפליקט גרסה — מושך עדכונים אחרונים');
+        await cloudPull();
+        return;
+      }
+      if (data.ok) {
+        cloudVersion = Number(data.newVersion || cloudVersion);
+        const stat = document.getElementById('cloudStat');
+        if (stat) stat.textContent = `דחוף: v${cloudVersion}`;
+        feedbackOk('סונכרן לענן');
+      } else {
+        feedbackErr('שגיאה בסנכרון');
+      }
+    } catch (e) {
+      console.error(e);
+      feedbackErr('שגיאה בסנכרון');
+    }
+  }
+
+  // Attach button handlers if elements exist
+  document.getElementById('btnCloudPull')?.addEventListener('click', cloudPull);
+  document.getElementById('btnCloudPush')?.addEventListener('click', cloudPush);
+
+  // Global scanner: capture barcode from anywhere (improved)
+  let scanBuffer = '';
+  let scanTimer = null;
+  let scanStartTs = 0;
+  const SCAN_MIN_LEN = 6;
+  // Increased gap to better detect end-of-scan on slower scanners
+  const SCAN_GAP_MS  = 80;
+
+  /**
+   * Flush the current scan buffer. If the buffer contains a complete barcode
+   * (>=SCAN_MIN_LEN characters) it is dispatched to the appropriate handler
+   * based on the active tab. If too short, a feedback error is shown.
+   */
+  function flushScan(){
+    // nothing to flush
+    if(!scanBuffer) return;
+    const code = scanBuffer;
+    scanBuffer = '';
+    if(code.length >= SCAN_MIN_LEN){
+      const active = document.querySelector('.tab.active')?.dataset.tab || 't1';
+      if(active === 't2') handleScan2(code); else handleScan1(code);
+    } else {
+      // short or incomplete scan detected
+      feedbackErr('הסריקה לא הושלמה — נסה שוב');
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    // ignore control/meta combinations
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    // schedule flush after a small gap: resetting the timer each keystroke
+    if (scanTimer) clearTimeout(scanTimer);
+    scanTimer = setTimeout(() => { flushScan(); }, SCAN_GAP_MS);
+
+    const isChar = e.key.length === 1;
+    const inEditable = document.activeElement && (
+      document.activeElement.tagName === 'INPUT' ||
+      document.activeElement.tagName === 'TEXTAREA' ||
+      document.activeElement.isContentEditable === true
+    );
+
+    if (isChar) {
+      // start timing when first character arrives
+      if (!scanBuffer) scanStartTs = Date.now();
+      // accumulate keystrokes into buffer; do not block normal typing
+      scanBuffer += e.key;
+      return;
+    }
+    if (e.key === 'Enter') {
+      // only consume Enter outside of editable fields
+      if (!inEditable) {
+        e.preventDefault();
+        flushScan();
+      }
+    }
+  }, true);
+
+  // Initial renders
+  function updateStats2(){ $('#statBarcodes2').textContent = Object.keys(barcodes).length; const skusSet = new Set(Object.values(barcodes).map(v=>String(v.sku))); $('#statSkus2').textContent = skusSet.size; }
+  renderAll1(); renderAll2(); renderLocTable();
+})();
+</script>
+</body>
+</html>
